@@ -26,7 +26,7 @@
 #include <telephony/ril_cdma_sms.h>
 #include <cutils/sockets.h>
 #include <cutils/jstring.h>
-#include <cutils/record_stream.h>
+#include <telephony/record_stream.h>
 #include <utils/Log.h>
 #include <utils/SystemClock.h>
 #include <pthread.h>
@@ -208,6 +208,7 @@ static void dispatchRaw(Parcel& p, RequestInfo *pRI);
 static void dispatchSmsWrite (Parcel &p, RequestInfo *pRI);
 static void dispatchDataCall (Parcel& p, RequestInfo *pRI);
 static void dispatchVoiceRadioTech (Parcel& p, RequestInfo *pRI);
+static void dispatchSetInitialAttachApn (Parcel& p, RequestInfo *pRI);
 static void dispatchCdmaSubscriptionSource (Parcel& p, RequestInfo *pRI);
 static void dispatchDepersonalization(Parcel &p, RequestInfo *pRI);
 
@@ -1057,8 +1058,7 @@ dispatchImsGsmSms(Parcel &p, RequestInfo *pRI, uint8_t retry, int32_t messageRef
     rism.messageRef = messageRef;
 
     startRequest;
-    appendPrintBuf("%sformat=%d,", printBuf, rism.tech);
-
+    appendPrintBuf("%sformat=%d,", printBuf, rism.format);
     if (countStrings == 0) {
         // just some non-null pointer
         pStrings = (char **)alloca(sizeof(char *));
@@ -1484,6 +1484,7 @@ static void dispatchCdmaSubscriptionSource(Parcel& p, RequestInfo *pRI) {
         RIL_onRequestComplete(pRI, RIL_E_SUCCESS, &cdmaSubscriptionSource, sizeof(int));
 }
 
+
 /**
 * Callee expects const RIL_Depersonalization *
 * Payload is:
@@ -1514,17 +1515,48 @@ dispatchDepersonalization(Parcel &p, RequestInfo *pRI) {
     if (status != NO_ERROR) {
         goto invalid;
     }
+static void dispatchSetInitialAttachApn(Parcel &p, RequestInfo *pRI)
+{
+    RIL_InitialAttachApn pf;
+    int32_t  t;
+    status_t status;
 
-    s_callbacks.onRequest(pRI->pCI->requestNumber, &d, sizeof(d), pRI);
+    memset(&pf, 0, sizeof(pf));
+
+    pf.apn = strdupReadString(p);
+    pf.protocol = strdupReadString(p);
+
+    status = p.readInt32(&t);
+    pf.authtype = (int) t;
+
+    pf.username = strdupReadString(p);
+    pf.password = strdupReadString(p);
+
+    startRequest;
+    appendPrintBuf("%sapn=%s, protocol=%s, auth_type=%d, username=%s, password=%s",
+            printBuf, pf.apn, pf.protocol, pf.auth_type, pf.username, pf.password);
+    closeRequest;
+    printRequest(pRI->token, pRI->pCI->requestNumber);
+
+    if (status != NO_ERROR) {
+        goto invalid;
+    }
+    s_callbacks.onRequest(pRI->pCI->requestNumber, &pf, sizeof(pf), pRI);
 
 #ifdef MEMSET_FREED
-    memsetString(d.depersonalizationCode);
+    memsetString(pf.apn);
+    memsetString(pf.protocol);
+    memsetString(pf.username);
+    memsetString(pf.password);
 #endif
 
-    free(d.depersonalizationCode);
+    free(pf.apn);
+    free(pf.protocol);
+    free(pf.username);
+    free(pf.password);
 
 #ifdef MEMSET_FREED
-    memset(&d, 0, sizeof(d));
+    memset(&pf, 0, sizeof(pf));
 #endif
 
     return;
@@ -3899,7 +3931,7 @@ const char *
 failCauseToString(RIL_Errno e) {
     switch(e) {
         case RIL_E_SUCCESS: return "E_SUCCESS";
-        case RIL_E_RADIO_NOT_AVAILABLE: return "E_RAIDO_NOT_AVAILABLE";
+        case RIL_E_RADIO_NOT_AVAILABLE: return "E_RADIO_NOT_AVAILABLE";
         case RIL_E_GENERIC_FAILURE: return "E_GENERIC_FAILURE";
         case RIL_E_PASSWORD_INCORRECT: return "E_PASSWORD_INCORRECT";
         case RIL_E_SIM_PIN2: return "E_SIM_PIN2";
@@ -4078,6 +4110,7 @@ requestToString(int request) {
         case RIL_REQUEST_SET_DATA_SUBSCRIPTION: return "REQUEST_SET_DATA_SUBSCRIPTION";
         case RIL_REQUEST_GET_UICC_SUBSCRIPTION: return "REQUEST_GET_UICC_SUBSCRIPTION";
         case RIL_REQUEST_GET_DATA_SUBSCRIPTION: return "REQUEST_GET_DATA_SUBSCRIPTION";
+        case RIL_REQUEST_SET_INITIAL_ATTACH_APN: return "RIL_REQUEST_SET_INITIAL_ATTACH_APN";
         case RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED: return "UNSOL_RESPONSE_RADIO_STATE_CHANGED";
         case RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED: return "UNSOL_RESPONSE_CALL_STATE_CHANGED";
         case RIL_UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED: return "UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED";

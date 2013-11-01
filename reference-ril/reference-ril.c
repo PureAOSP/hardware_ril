@@ -1603,7 +1603,7 @@ error2:
     RIL_onRequestComplete(t, RIL_E_SMS_SEND_FAIL_RETRY, &response, sizeof(response));
     at_response_free(p_response);
     return;
-}
+    }
 
 static void requestImsSendSMS(void *data, size_t datalen, RIL_Token t)
 {
@@ -2321,8 +2321,7 @@ onRequest (int request, void *data, size_t datalen, RIL_Token t)
             requestEnterSimPin(data, datalen, t);
             break;
 
-       case RIL_REQUEST_IMS_REGISTRATION_STATE:
-        {
+        case RIL_REQUEST_IMS_REGISTRATION_STATE: {
             int reply[2];
             //0==unregistered, 1==registered
             reply[0] = s_ims_registered;
@@ -3114,7 +3113,7 @@ static void waitForClose()
 
 static void sendUnsolImsNetworkStateChanged()
 {
-#if 0  // to be used when unsol is changed to return data.
+#if 0 // to be used when unsol is changed to return data.
     int reply[2];
     reply[0] = s_ims_registered;
     reply[1] = s_ims_services;
