@@ -3867,7 +3867,6 @@ typedef struct {
  * RIL_REQUEST_IMS_SEND_SMS
  *
  * Send a SMS message over IMS
- *
  * "data" is const RIL_IMS_SMS_Message *
  *
  * "response" is a const RIL_SMS_Response *
@@ -3890,7 +3889,7 @@ typedef struct {
 #else
 #define RIL_REQUEST_GET_DATA_SUBSCRIPTION 121
 #endif
-#define RIL_REQUEST_IMS_SEND_SMS 113
+#define RIL_REQUEST_IMS_SEND_SMS 122
 
 /***********************************************************************/
 

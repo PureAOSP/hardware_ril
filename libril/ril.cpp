@@ -1515,6 +1515,13 @@ dispatchDepersonalization(Parcel &p, RequestInfo *pRI) {
     if (status != NO_ERROR) {
         goto invalid;
     }
+
+invalid:
+    invalidCommandBlock(pRI);
+    return;
+
+}
+
 static void dispatchSetInitialAttachApn(Parcel &p, RequestInfo *pRI)
 {
     RIL_InitialAttachApn pf;
@@ -1561,7 +1568,6 @@ static void dispatchSetInitialAttachApn(Parcel &p, RequestInfo *pRI)
 
     return;
 invalid:
-    free(d.depersonalizationCode);
     invalidCommandBlock(pRI);
     return;
 }
